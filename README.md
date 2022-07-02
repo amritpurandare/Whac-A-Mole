@@ -1,2 +1,2 @@
 # Whac-A-Mole
-koko Networks Skills Test 
+KOKO Networks Skills Test 
