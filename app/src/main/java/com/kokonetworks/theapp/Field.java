@@ -19,6 +19,9 @@ class Field extends LinearLayout {
 
     private int score;
     private Mole mole;
+    private boolean isGameEnded;
+
+    private int previousScore;
 
     private final int ACTIVE_TAG_KEY = 873374234;
 
@@ -64,6 +67,8 @@ class Field extends LinearLayout {
 
     private void resetScore() {
         score = 0;
+        isGameEnded = false;
+        previousScore = 0;
     }
 
     public void startGame() {
@@ -73,12 +78,17 @@ class Field extends LinearLayout {
             squareButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    boolean active = (boolean) view.getTag(ACTIVE_TAG_KEY);
-                    if (active) {
-                        score += mole.getCurrentLevel() * 2;
-                    } else {
-                        mole.stopHopping();
-                        listener.onGameEnded(score);
+                    if (!isGameEnded) {
+                        boolean active = (boolean) view.getTag(ACTIVE_TAG_KEY);
+                        if (active) {
+                            score += mole.getCurrentLevel() * 2;
+                            listener.updateScore(score);
+                        } else {
+                            // wrongly clicked
+                            circles[currentCircle].setBackground(ContextCompat.getDrawable(getContext(), R.drawable.hole_active));
+                            view.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.hole_wrong_tap));
+                            endGame();
+                        }
                     }
                 }
             });
@@ -101,11 +111,30 @@ class Field extends LinearLayout {
 
     public void setActive(int index) {
         mainHandler.post(() -> {
+
+            if (shouldContinueTheGame()) return;
+
             resetCircles();
             circles[index].setBackground(ContextCompat.getDrawable(getContext(), R.drawable.hole_active));
             circles[index].setTag(ACTIVE_TAG_KEY, true);
             currentCircle = index;
         });
+    }
+
+    private boolean shouldContinueTheGame() {
+        boolean isGameStarted = false;
+
+        for (SquareButton circle : circles) {
+            isGameStarted = (boolean) circle.getTag(ACTIVE_TAG_KEY);
+            if (isGameStarted)
+                break;
+        }
+
+        if(shouldEndGame() && isGameStarted) {
+            endGame();
+            return true;
+        }
+        return false;
     }
 
     public Listener getListener() {
@@ -120,5 +149,25 @@ class Field extends LinearLayout {
         void onGameEnded(int score);
 
         void onLevelChange(int level);
+
+        void updateScore(int currentScore);
+    }
+
+    public boolean shouldEndGame(){
+        if(score == 0)
+            return true;
+        else {
+            return score <= previousScore;
+        }
+    }
+
+    public void endGame(){
+        mole.stopHopping();
+        listener.onGameEnded(score);
+        isGameEnded = true;
+    }
+
+    public void updatePreviousScore() {
+        previousScore = score;
     }
 }

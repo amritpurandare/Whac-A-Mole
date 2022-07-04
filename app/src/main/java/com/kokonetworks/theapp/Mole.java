@@ -39,9 +39,14 @@ class Mole {
     }
 
     private void nextLevel(){
-        currentLevel++;
-        future.cancel(false);
-        startHopping();
+        stopHopping();
+        if (field.shouldEndGame()) {
+            field.endGame();
+        }else{
+            currentLevel++;
+            field.updatePreviousScore();
+            startHopping();
+        }
     }
 
     public int getCurrentLevel(){
@@ -49,7 +54,7 @@ class Mole {
     }
 
     private int nextHole(){
-        int hole = new Random().nextInt(field.totalCircles()-1);
+        int hole = new Random().nextInt(field.totalCircles());
         if(hole == field.getCurrentCircle()){
             return nextHole();
         }
